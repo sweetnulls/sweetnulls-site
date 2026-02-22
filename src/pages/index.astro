@@ -1,0 +1,221 @@
+---
+import Base from '../layouts/Base.astro';
+import '../styles/global.css';
+import { fetchPosts, type SubstackPost } from '../lib/feed';
+
+const posts = await fetchPosts();
+
+// Split posts into sections
+const featured = posts[0];
+const sidebar = posts.slice(1, 3);
+const carousel = posts.slice(3, 9);
+
+// Placeholder gradients for posts without images
+const placeholders = ['warm', 'cool', 'deep', 'blush', 'muted', 'sand', 'olive'];
+function getPlaceholder(index: number) {
+  return placeholders[index % placeholders.length];
+}
+---
+
+<Base>
+
+  <!-- MAGAZINE SPREAD -->
+  <section class="magazine-spread">
+    <div class="magazine-spread-inner">
+
+      <!-- FEATURED -->
+      {featured ? (
+        <a href={featured.link} class="featured-article animate-in delay-1" target="_blank">
+          {featured.image ? (
+            <img src={featured.image} alt={featured.title} loading="eager" />
+          ) : (
+            <div class={`placeholder-img ${getPlaceholder(0)}`}>Featured</div>
+          )}
+          <div class="featured-overlay">
+            <span class="featured-category">{featured.category}</span>
+            <h1 class="featured-title">{featured.title}</h1>
+            <p class="featured-excerpt">{featured.excerpt}</p>
+          </div>
+        </a>
+      ) : (
+        <div class="featured-article">
+          <div class="placeholder-img deep">Coming Soon</div>
+          <div class="featured-overlay">
+            <span class="featured-category">Sweet Nulls</span>
+            <h1 class="featured-title">New Stories Coming Soon</h1>
+            <p class="featured-excerpt">The first edition of Sweet Nulls is on its way.</p>
+          </div>
+        </div>
+      )}
+
+      <!-- SIDEBAR -->
+      <div class="sidebar-stack">
+        {sidebar.length > 0 ? sidebar.map((post, i) => (
+          <a href={post.link} class={`sidebar-article animate-in delay-${i + 2}`} target="_blank">
+            <div class="sidebar-article-image">
+              {post.image ? (
+                <img src={post.image} alt={post.title} loading="eager" />
+              ) : (
+                <div class={`placeholder-img ${getPlaceholder(i + 1)}`}></div>
+              )}
+            </div>
+            <div class="sidebar-article-content">
+              <span class="sidebar-category">{post.category}</span>
+              <h2 class="sidebar-title">{post.title}</h2>
+              <p class="sidebar-excerpt">{post.excerpt}</p>
+              <span class="sidebar-meta">{post.readTime}</span>
+            </div>
+          </a>
+        )) : (
+          <>
+            <div class="sidebar-article">
+              <div class="sidebar-article-image"><div class="placeholder-img warm"></div></div>
+              <div class="sidebar-article-content">
+                <span class="sidebar-category">Coming Soon</span>
+                <h2 class="sidebar-title">More content on the way</h2>
+                <p class="sidebar-excerpt">Stay tuned for new articles.</p>
+              </div>
+            </div>
+            <div class="sidebar-article">
+              <div class="sidebar-article-image"><div class="placeholder-img cool"></div></div>
+              <div class="sidebar-article-content">
+                <span class="sidebar-category">Coming Soon</span>
+                <h2 class="sidebar-title">Subscribe to get notified</h2>
+                <p class="sidebar-excerpt">Be the first to know when new stories drop.</p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+    </div>
+  </section>
+
+  <div class="section-divider"><hr></div>
+
+  <!-- CAROUSEL -->
+  {carousel.length > 0 && (
+    <section class="carousel-section">
+      <div class="carousel-inner">
+        <div class="section-header">
+          <span class="section-label">More Stories</span>
+          <div class="carousel-controls">
+            <button class="carousel-btn" id="carouselPrev" disabled>&#8592;</button>
+            <button class="carousel-btn" id="carouselNext">&#8594;</button>
+          </div>
+        </div>
+
+        <div class="carousel-track-wrapper">
+          <div class="carousel-track" id="carouselTrack">
+            {carousel.map((post, i) => (
+              <div class="carousel-slide">
+                <a href={post.link} class="carousel-card" target="_blank">
+                  <div class="carousel-card-image">
+                    {post.image ? (
+                      <img src={post.image} alt={post.title} loading="lazy" />
+                    ) : (
+                      <div class={`placeholder-img ${getPlaceholder(i + 3)}`}></div>
+                    )}
+                  </div>
+                  <span class="carousel-card-category">{post.category}</span>
+                  <h3 class="carousel-card-title">{post.title}</h3>
+                  <p class="carousel-card-excerpt">{post.excerpt}</p>
+                  <span class="carousel-card-meta">{post.readTime}</span>
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="carousel-dots" id="carouselDots"></div>
+      </div>
+    </section>
+
+    <div class="section-divider"><hr></div>
+  )}
+
+  <script>
+    // Carousel logic
+    const track = document.getElementById('carouselTrack');
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+    const dotsContainer = document.getElementById('carouselDots');
+
+    if (track && prevBtn && nextBtn && dotsContainer) {
+      const slides = track.querySelectorAll('.carousel-slide');
+      let currentIndex = 0;
+      let slidesPerView = 3;
+
+      function getSlidesPerView() {
+        if (window.innerWidth <= 640) return 1;
+        if (window.innerWidth <= 1024) return 2;
+        return 3;
+      }
+
+      function getMaxIndex() { return Math.max(0, slides.length - slidesPerView); }
+
+      function buildDots() {
+        dotsContainer.innerHTML = '';
+        const total = getMaxIndex() + 1;
+        for (let i = 0; i < total; i++) {
+          const dot = document.createElement('button');
+          dot.className = 'carousel-dot' + (i === currentIndex ? ' active' : '');
+          dot.addEventListener('click', () => goTo(i));
+          dotsContainer.appendChild(dot);
+        }
+      }
+
+      function updateCarousel() {
+        const sw = 100 / slidesPerView;
+        track.style.transform = `translateX(-${currentIndex * sw}%)`;
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex >= getMaxIndex();
+        dotsContainer.querySelectorAll('.carousel-dot').forEach((d, i) => {
+          d.classList.toggle('active', i === currentIndex);
+        });
+      }
+
+      function goTo(i) {
+        currentIndex = Math.max(0, Math.min(i, getMaxIndex()));
+        updateCarousel();
+      }
+
+      prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
+      nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
+
+      function onResize() {
+        slidesPerView = getSlidesPerView();
+        if (currentIndex > getMaxIndex()) currentIndex = getMaxIndex();
+        buildDots();
+        updateCarousel();
+      }
+
+      window.addEventListener('resize', onResize);
+      onResize();
+
+      // Touch swipe
+      let tStartX = 0;
+      track.addEventListener('touchstart', e => { tStartX = e.changedTouches[0].screenX; }, { passive: true });
+      track.addEventListener('touchend', e => {
+        const diff = tStartX - e.changedTouches[0].screenX;
+        if (Math.abs(diff) > 50) { diff > 0 ? goTo(currentIndex + 1) : goTo(currentIndex - 1); }
+      }, { passive: true });
+    }
+
+    // Scroll animations
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animation = 'fadeUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.carousel-card, .editorial-content, .editorial-image').forEach(el => {
+      el.style.opacity = '0';
+      observer.observe(el);
+    });
+  </script>
+
+</Base>

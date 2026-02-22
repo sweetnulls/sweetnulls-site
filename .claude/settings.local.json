@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:sweetnulls.substack.com)",
+      "WebFetch(domain:sweetnulls.com)",
+      "WebSearch",
+      "WebFetch(domain:www.omnisend.com)",
+      "WebFetch(domain:formx.stream)",
+      "WebFetch(domain:getsitecontrol.com)",
+      "WebFetch(domain:www.subframe.com)",
+      "WebFetch(domain:www.blissdrive.com)",
+      "WebFetch(domain:www.lennysnewsletter.com)",
+      "WebFetch(domain:www.bonappetit.com)"
+    ]
+  }
+}
