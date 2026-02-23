@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/p/:path*",
+      "destination": "https://sweetnulls.substack.com/p/:path*",
+      "permanent": false
+    }
+  ]
+}
